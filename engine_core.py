@@ -14,7 +14,7 @@ import json
 import re
 import secrets
 
-ENGINE_VERSION = "2.0.0-qa"
+ENGINE_VERSION = "3.2.0-qa"
 SOURCE = "Python secrets.randbelow / OS-backed CSPRNG (tool execution)"
 DICE_RE = re.compile(r"^(?:(\d{1,2})?d(\d{1,4}))(?:([+-]\d{1,5}))?$", re.IGNORECASE)
 
@@ -98,6 +98,22 @@ def validate_roll(result: Roll) -> bool:
     """Validate count, face bounds, kept/discarded selection, arithmetic, digest."""
     if result.mode not in ("normal", "advantage", "disadvantage"):
         raise RulesError("Invalid roll mode")
+    if any(type(v) is not int for v in (result.count,result.sides,result.modifier,
+                                       result.raw_sum,result.total)):
+        raise RulesError("Dice metadata must be integers, not booleans or floats")
+    if not 1 <= result.count <= 99 or not 2 <= result.sides <= 1000:
+        raise RulesError("Invalid dice shape")
+    if not isinstance(result.expression,str):
+        raise RulesError("Invalid dice expression")
+    matched=DICE_RE.fullmatch(result.expression)
+    if (matched is None or int(matched.group(1) or '1')!=result.count or
+        int(matched.group(2))!=result.sides or
+        int(matched.group(3) or '0')!=result.modifier):
+        raise RulesError("Roll expression and face metadata differ")
+    if result.mode!='normal' and (result.count!=1 or result.sides!=20):
+        raise RulesError("Advantage/disadvantage applies only to a single d20")
+    if any(type(face) is not int for face in (*result.all_faces,*result.kept_faces,*result.discarded_faces)):
+        raise RulesError("Die faces must be integers")
     total_faces = 2 if result.mode != "normal" else result.count
     if len(result.all_faces) != total_faces or len(result.kept_faces) != (1 if result.mode != "normal" else result.count):
         raise RulesError("Wrong number of dice")
@@ -128,6 +144,7 @@ def d20_result(roll_obj: Roll, target: int, kind: str, edition: str) -> dict:
     """
     if edition not in ("2014", "2024") or kind not in ("attack", "ability_check", "saving_throw"):
         raise RulesError("Unsupported edition or d20 test type")
+    validate_roll(roll_obj)
     if roll_obj.sides != 20 or roll_obj.count != 1:
         raise RulesError("Expected one effective d20")
     natural = roll_obj.kept_faces[0]
@@ -262,6 +279,7 @@ def apply_death_save(state: DeathSaveState, roll_obj: Roll, edition: str) -> Dea
     """
     if edition not in ("2014", "2024") or roll_obj.count != 1 or roll_obj.sides != 20:
         raise RulesError("Invalid death save rules profile or die")
+    validate_roll(roll_obj)
     if state.dead or state.stable or state.recovered_hp:
         raise RulesError("Death saves only apply when dying at 0 HP")
     n = roll_obj.kept_faces[0]
