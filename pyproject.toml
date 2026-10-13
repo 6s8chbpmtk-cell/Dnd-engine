@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "narrative-rpg-engine-core"
+version = "2.0.0"
+description = "Offline dice and invariant guard helpers for a ChatGPT and Airtable narrative RPG engine"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "All rights reserved" }
+classifiers = ["Programming Language :: Python :: 3"]
+
+[tool.setuptools]
+py-modules = ["engine_core"]
