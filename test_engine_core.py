@@ -204,3 +204,38 @@ class CliIntegrationTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+
+
+class RollShapeSecurityRegression(unittest.TestCase):
+    def forge(self, roll_obj, **changes):
+        from dataclasses import replace, asdict
+        import hashlib,json
+        item=replace(roll_obj,**changes)
+        payload=asdict(item)
+        payload.pop('digest')
+        digest=hashlib.sha256(json.dumps(payload,sort_keys=True).encode()).hexdigest()
+        return replace(item,digest=digest)
+
+    def test_dice_count_mismatch_rejected_even_with_reforged_digest(self):
+        from engine_core import validate_roll
+        b=roll('1d6+2',die=lambda n:4)
+        forged=self.forge(b,count=0,expression='0d6+2',all_faces=(),kept_faces=(),raw_sum=0,total=2)
+        with self.assertRaises(RulesError):validate_roll(forged)
+
+    def test_sides_mismatch_rejected_even_with_reforged_digest(self):
+        from engine_core import validate_roll
+        b=roll('1d6+2',die=lambda n:4)
+        forged=self.forge(b,sides=8)
+        with self.assertRaises(RulesError):validate_roll(forged)
+
+    def test_non_d20_advantage_rejected_with_reforged_digest(self):
+        from engine_core import validate_roll
+        b=roll('1d20',mode='advantage',die=lambda n:10)
+        forged=self.forge(b,sides=6,expression='d6',all_faces=(5,2),kept_faces=(5,),discarded_faces=(2,),raw_sum=5,total=5)
+        with self.assertRaises(RulesError):validate_roll(forged)
+
+    def test_boolean_die_face_rejected_even_with_reforged_digest(self):
+        from engine_core import validate_roll
+        b=roll('1d6',die=lambda n:1)
+        forged=self.forge(b,all_faces=(True,),kept_faces=(True,))
+        with self.assertRaises(RulesError):validate_roll(forged)
