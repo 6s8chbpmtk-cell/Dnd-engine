@@ -87,11 +87,13 @@ def verify_full_history(port: AirtablePort, anchor: BattleAnchor,
         restored.version != encounter.get('Current State Version') or
         restored.version != campaign.get('State Version') or
         restored.round_no != encounter.get('Round Number') or
-        (restored.version > 0 and
+        ((restored.version>0 or encounter.get('Status')=='Active') and
          (restored.active.actor_id if restored.status=='active' else '') !=
              (encounter.get('Active Combatant ID') or '')) or
-        encounter.get('Status') != ('Resolved' if restored.status=='complete' else
-                                     'Active' if restored.version else 'Prepared')):
+        encounter.get('Status') not in (
+            ('Resolved',) if restored.status=='complete' else
+            ('Prepared','Active') if restored.version==0 else ('Active',)
+        )):
         raise PersistenceError('Current campaign and encounter are not replay-equivalent')
 
     audits = [r for r in port.list('Dice Audit v2')

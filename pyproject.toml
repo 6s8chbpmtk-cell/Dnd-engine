@@ -4,12 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "narrative-rpg-engine-core"
-version = "3.2.0"
-description = "Offline dice and invariant guard helpers for a ChatGPT and Airtable narrative RPG engine"
+version = "3.4.0"
+description = "Conservative edition-locked D&D 5e rules and Airtable game-state validation helper"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "All rights reserved" }
 classifiers = ["Programming Language :: Python :: 3"]
 
 [tool.setuptools]
-py-modules = ["engine_core", "combat_runtime", "initiative", "airtable_persistence", "history_verifier"]
+py-modules = [
+  "engine_core", "combat_runtime", "initiative", "airtable_persistence",
+  "history_verifier", "recovery_bootstrap", "connector_readonly", "write_guard"
+]

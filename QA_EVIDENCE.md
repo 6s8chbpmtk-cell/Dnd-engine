@@ -1,36 +1,25 @@
-# QA evidence — tactical engine v3.2
+# v3.4 local QA evidence — October 13, 2026
 
 ## Automated tests
 
-- Python 3.13.5 in the local tool runtime, October 13, 2026.
-- 186 / 186 `unittest` tests passed. Includes 100 randomized synthetic multi-round battles with precise event-ledger replay and checkpoint restoration.
-- Fake Airtable transport tests simulate lost acknowledgments, interrupted writes, stale versions, duplicate event keys, altered digests, inconsistent actor projections and injection of test dice.
-- `scripts/replay_checkpoint.py` validates and summarizes a checkpoint offline, optionally replaying a serialized ordered event chain.
+- **242 / 242 unittest executions passed** in the local Python 3.13 environment.
+- Includes 100 deterministic-seed synthetic multi-round encounters and replay verification, plus the 12-event / 10-dice QA battle fixture from the previous release.
+- All prior fixture, combat-runtime, dice, Airtable persistence/mock fault, full-history, connector adapter and recovery tests still pass.
+- New `test_write_guard.py` validates (a) a legitimate twelve-event history accepts and verifies a thirteenth canonical transition, (b) a full six-operation player/NPC turn produces six unique, consecutively replayable events, and (c) historical prose-only/compound event entries block the next write before any mutation.
+- Additional cases reject malformed JSON event payloads, missing/duplicate/pending ledger rows, extra unaudited dice, stale versions, unverified/mismatched genesis, player actions without player intent, and post-write reconciliation failures. No blind retries.
+- Updated `test_connector_cli.py` ensures a read-only field-ID connector export with prose-only ledger entry reports `HALT_UNVERIFIED` and `UNREPLAYABLE_EVENT_PAYLOAD`.
+- Python 3.11 and 3.12 local tests were not available; GitHub's configured Actions matrix must still test those versions after source publication.
 
-## Real Airtable connector integration (isolated QA only)
+## Separate earlier QA observations (not claims of this new release)
 
-An isolated QA campaign (not a live game) had three consecutively verified state changes from version 0 to 3: synthetic player end-turn, autonomous bandit move, and an actual OS-backed melee attack. The third action used the first generated d20 face 18 + 3 = 21 against AC 16, and d6 face 4 + 1 = 5 damage, changing the synthetic fighter's HP 12 to 7. Both dice audits independently returned MATCH and VALID RANGE, with the engine event hash, checkpoint and campaign/encounter versions agreeing. Two Combatant Turns v2 QA records matched the checkpoint in all core tracked fields.
+An isolated Airtable QA campaign used a 12-event, 10-dice, three-round GM-only battle. A synthetic full connector export correctly replayed its ledger under Python; the original real Airtable records were also independently read using the connector. That verified tactical state only, not an entire D&D rules engine. The genuine Blackglass cold-start pilot in a separate conversation successfully loaded the initial campaign and saved a plausible version-3 tactical checkpoint, but combined six mechanical transitions into three prose-only event records. Consequently, strict replay from genesis **fails**, even though the latest checkpoint/hash and HP/turn order are self-consistent. v3.4's tests reproduce and reject that exact class of failure.
 
-Two actual Airtable formulas had zero-value defects: State Delta Check erroneously flagged version 0 as unversioned; Resource Quantity Guard treated quantity 0 with blank charges as UNTRACKED. Both were corrected and independently tested against valid and invalid controls.
+## Safety and remaining gates
 
-The original QA initiative values were fixed synthetic order (not source-certified dice); the new `initiative.py` builder enforces genuine d20 sources for future play.
+1. Public GitHub repository currently contains v3.2; publish the complete v3.4 source and observe **all** Python 3.11/3.12/3.13 Actions jobs pass.
+2. Use a **clean isolated campaign** to perform a full independent cross-chat read → one-event-per-operation guarded write → fresh-chat replay. Do not overwrite the original broken Blackglass history.
+3. Isolate game-state write permissions: a direct ChatGPT Airtable write can bypass all Python guards. Dedicated serialization/coordination and restricted service-token access are necessary.
+4. No multi-record Airtable transaction guarantee, independent cryptographic evidence of random source, or full SRD 5e rule coverage is claimed.
+5. Existing four optional Airtable QA integrity automations remain inactive.
 
-## Unproven/blocked gates
-
-- GitHub currently hosts core v2 with a successful 39-test workflow, not this newer source. Upload and GitHub CI validation are still pending.
-- No Airtable multi-row atomicity or cross-writer race safety.
-- No independent cryptographic proof of random source, only OS-backed execution claims and digest consistency.
-- No genuinely fresh-chat cold restart verification.
-- No full SRD 5e spell/class/condition/reaction completeness.
-- Four Airtable integrity automations remain intentionally disabled.
-- The Airtable REST adapter uses injected environment credentials only; the in-chat Airtable plugin path is separately orchestrated, not an always-on server.
-
-
-## v3.2 live Airtable QA extension
-
-- In a *separate GM-only test campaign*, persisted 12 Verified Ledger events over 3 completed rounds; final tactical version 12, round 4, one fighter 39/45 HP and other 27/42 HP, still Active.
-- Linked 10 OS-backed CSPRNG rolls reconciled to those events; each passed Airtable MATCH/VALID RANGE formula checks.
-- Verified two interrupted staged writes were recovered without rolling again or duplicating ledger events.
-- Read the remote Airtable data in a fresh independent connector invocation: 12 events plus 10 audited rolls exactly matched the same initial/final checkpoints and locally replayed chain. Source genesis v0 persisted in a QA Session Log.
-- Added `history_verifier.py` and 21 new recovery/CLI/fixture tests. Current local total: 186/186 passing. Real external separate-conversation cold start remains an unpassed gate.
-- See `QA_V4_MULTIROUND.md` for exact scope and explicit unsupported full 5e mechanics.
+**No real Airtable campaign was written, repaired, or reset in the v3.4 code-development pass.**

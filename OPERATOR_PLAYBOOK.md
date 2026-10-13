@@ -48,6 +48,19 @@ Isolated QA campaign `qa:combat:pilot` (not an actual user-play campaign) succes
 - Cold-start restart must be validated in a wholly separate ChatGPT conversation before production use.
 - Draft Airtable alerts are intentionally disabled pending review to avoid unexpected usage and notifications.
 
-## Full-history check (v3.2)
 
-The isolated GM-only QA run has 12 Verified events, 10 reconciled OS-backed dice audits and current version 12, with original checkpoint saved to Session Logs at v0. Before continuing a restored encounter, use `history_verifier.verify_full_history(port, anchor, genesis_checkpoint)`; do not reconstruct genesis by trusting the latest mutable snapshot. It rejects gaps, pending events, tampering and mislinked rolls. See `QA_V4_MULTIROUND.md`. Genuine separate-chat recovery is still untested.
+## v3.4 MANDATORY: fail-closed history before *every* write
+
+Never commit a turn directly by editing Airtable fields from the ChatGPT
+connector. `AirtableBattlePilot` by itself validates a local write but does not
+replay all historical events before every write. Authorized automated writers
+MUST call `VerifiedTurnGateway.commit()` from `write_guard.py`, which reloads
+unique verified genesis, all events, dice audits and projections, then replays
+from genesis before and after committing exactly one operation. Reject a
+prose-only ledger, even when `Commit Status=Verified` and the latest checkpoint
+fingerprint matches. No speculative rerolls or auto-repair.
+
+**A chat with unrestricted direct Airtable writes can bypass this guard.**
+This is an operator contract for ChatGPT until a dedicated service enforces
+write permissions. Full deployment needs a sole token holder and serialized
+mutation endpoint. See `TURN_WRITE_GATE.md`.

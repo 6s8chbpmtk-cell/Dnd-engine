@@ -1,33 +1,26 @@
-# v3.2 QA — October 13, 2026
+# v3.4.0 QA — fail-closed turn-write gateway
 
-**Status: QA staging. Not released to GitHub yet.**
+**Status:** source built and unit-tested locally on October 13, 2026; pending GitHub publication and independent live-gateway integration. **Not a complete D&D 5e engine.**
 
-## Verified changes
+## What's new
 
-- Adds tactical `Fighter`, `Battle` and pure verified transition/replay engine.
-- Adds separate `initiative.py`, including explicit tie-resolution requirements.
-- Adds Airtable persistence adapter with synthetic fault/timeout and acknowledgement-loss tests, dice audit projection, optional per-combatant row reconciliation, and conservative readback requirements.
-- Adds read-only checkpoint/replay CLI and 100 randomized synthetic multi-round battle replays and targeted security/invariant tests.
-- Tightens dice expression metadata, die-shape validation, justified advantage requirement, map coordinate typing, unsupported mechanical action refusal, and blocks the unverified opportunity-attack boolean bypass.
-- Latest local test result: **186/186 passing** under available local Python. Separate prior GitHub core v2 workflow: **39/39 passing**; v3.2 code is not on GitHub yet.
-- Real QA Airtable pilot first verified three sequential state events, including actual OS-backed melee attack and linked dice audit. Separately created two per-combatant QA records that exactly reconcile with the checkpoint. An overlapping candidate action was refused on stale preflight; no live game campaign state was edited.
+- `write_guard.py` adds `VerifiedTurnGateway` with strict, read-only history replay **before and after every supported tactical write**. If any previous event, dice audit, actor projection or version fails full verification, the gateway refuses the next write.
+- Preserves **one mechanical transition per canonical `VerifiedEvent`**. Move, attack, end turn, Disengage, move, end turn are six events, not a three-record prose summary. The new six-transition test replays the exact history and verifies the active combatant and round.
+- `recovery_bootstrap.py` now recognizes the actual original cold-start campaign's uniquely verified, version-zero Session Logs identity `<campaign-id>:session01:genesis`, with exact JSON saved in `State Reconciliation Notes`. The standard `<campaign-id>:genesis` format still works. A prose recap is not a valid checkpoint.
+- `history_verifier.py` accepts initial version-zero active encounters and validates their active actor; their version and complete history remain mandatory.
+- `scripts/verify_connector_export.py` returns machine-readable `HALT_UNVERIFIED` and `UNREPLAYABLE_EVENT_PAYLOAD` when a connector export contains malformed historical events.
+- Regressions reproduce the observed Blackglass compound/prose-only event failure, incomplete/duplicate/stale ledger, orphan dice, unverified genesis, unapproved player actions, and uncertain post-write behavior.
+- Includes the previous unpublished v3.3 read-only connector bridge (`connector_readonly.py`, `recovery_bootstrap.py`) and its adversarial tests, so it is a **complete upgrade from the public v3.2**.
 
-## Remaining verification gates
+## Evidence
 
-1. Manually upload/review v3.2 files to the public GitHub repository (the current ChatGPT GitHub integration rejects repository writes with 403). Verify all GitHub Actions Python-matrix jobs.
-2. The 12-event/10-dice three-round GM-only Airtable persistence test passed. A separate controlled test of concentration, true encounter victory/defeat completion and actual reaction resolution is still required.
-3. Perform a genuinely separate-chat cold start and verify exact recovery without relying on chat memory.
-4. Implement and verify opportunity reaction, Dodge, Extra Attack, spells, 0 HP/death saves and more 5e rules modules.
-5. Introduce an external atomic commit coordinator for concurrent session writers; no claim of race safety until then.
-6. Confirm Airtable automation alerts through explicit review; all four currently remain undeployed.
+- **242 / 242 Python `unittest` executions passed locally** on Python 3.13, including 100 deterministic-seed synthetic multi-round battles and an independent synthetic twelve-event/replay fixture.
+- No real Airtable record was modified while developing v3.4; the original Blackglass failure remains intact as evidence.
+- No live Airtable gateway write or fresh separate-chat enforcement has been tested for v3.4.
+- The three-version GitHub Actions matrix is configured but its **v3.4 result is pending publication**.
 
-## Security
+## Known limitations and safety
 
-No real campaign secrets or Airtable credentials are included in this public-ready package. SHA-256 state/dice digests detect accidental modifications, but **are not signatures nor cryptographic proof of OS randomness**. Publish only source and synthetic tests, never player records.
+Airtable multi-record writes are **non-atomic**, and the application-layer gateway does not enforce access permissions. A ChatGPT conversation that still has direct table-write permission can bypass it. A trusted single-writer service with exclusive Airtable write credentials is required to close that bypass. SHA digests demonstrate internal consistency, not independent proof of OS randomness. Full D&D 5e legality, spells, conditions, reactions and death rules remain incomplete. Do not auto-rewrite the original unreplayable ledger to make it appear compliant.
 
-## v3.2 addendum
-
-- A full three-round GM-only Airtable QA sequence was persisted through 12 Verified events and 10 reconciled dice rolls; a fresh remote connector read matched all event hashes, versions and roll evidence. Details in `QA_V4_MULTIROUND.md`.
-- Persisted an initial v0 QA genesis checkpoint in Session Logs; new `history_verifier.py` independently replays full historical events from that origin, comparing the replay to the latest state and all dice audits.
-- Added `scripts/verify_airtable_history.py` read-only REST verifier, eight exact-scenario replay tests and additional omission/tamper/continuity tests. Total: 186 local tests passing.
-- Same-chat cold data reload proved; genuinely separate conversation cold-start remains to be tested.
+See `TURN_WRITE_GATE.md`, `BLACKGLASS_REGRESSION.md`, `OPERATOR_PLAYBOOK.md` and `RECOVERY_PLAYBOOK.md`.
