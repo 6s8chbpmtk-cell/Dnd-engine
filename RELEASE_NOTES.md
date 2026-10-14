@@ -1,3 +1,24 @@
+# v3.5.0 QA — restricted HTTP turn-gateway prototype
+
+**Status:** tested locally only; not deployed, not connected to an Action,
+not certified for production Airtable writes.
+
+- Adds `gateway_service.py` exposing authenticated `/v1/state` and `/v1/turn`
+  plus generated public OpenAPI 3.0 schema for a custom GPT Action.
+- Whitelists one action per request: `move`, `end_turn`, `disengage`,
+  `melee_attack` (limited adjacent melee). Rejects client dice inputs,
+  compound actions and missing user intent; only server uses OS entropy.
+- Uses the existing v3.4 `VerifiedTurnGateway` for genesis-to-current
+  preflight and post-write validation, and halts on unreplayable history.
+- Adds fake-port regression tests; no real Airtable mutation during QA.
+- Incomplete enforcement: hosting credentials, permission separation,
+  deployment, custom GPT Action and fresh isolated integration test are
+  STILL REQUIRED. No API can prevent out-of-band Airtable editors.
+
+See `DEPLOY_GATEWAY.md`.
+
+---
+
 # v3.4.0 QA — fail-closed turn-write gateway
 
 **Status:** source built and unit-tested locally on October 13, 2026; pending GitHub publication and independent live-gateway integration. **Not a complete D&D 5e engine.**

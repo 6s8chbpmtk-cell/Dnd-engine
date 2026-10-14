@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "narrative-rpg-engine-core"
-version = "3.4.0"
+version = "3.5.0"
 description = "Conservative edition-locked D&D 5e rules and Airtable game-state validation helper"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,5 +14,5 @@ classifiers = ["Programming Language :: Python :: 3"]
 [tool.setuptools]
 py-modules = [
   "engine_core", "combat_runtime", "initiative", "airtable_persistence",
-  "history_verifier", "recovery_bootstrap", "connector_readonly", "write_guard"
+  "history_verifier", "recovery_bootstrap", "connector_readonly", "write_guard", "gateway_service"
 ]

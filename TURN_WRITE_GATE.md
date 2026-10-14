@@ -81,3 +81,12 @@ True enforcement requires:
 Until then, full D&D play, provenance of remote entropy, concurrency guarantees,
 and unreplayable legacy checkpoints are **not certified**. v3.4 does not convert
 prose-only ledger records into legitimate historical proofs.
+
+## v3.5 HTTP adapter (staging only)
+
+`gateway_service.py` now offers an authenticated restricted API wrapper around
+this gateway. It exposes only `/v1/state` and one-op `/v1/turn` to an Action-only
+custom GPT. The wrapper accepts no fabricated die faces, constructs parameters
+from a whitelist, generates basic melee dice server-side, and invokes the exact
+v3.4 before/after history verification. It is not live until hosted and
+credential-isolated. Review `DEPLOY_GATEWAY.md` before using any real records.

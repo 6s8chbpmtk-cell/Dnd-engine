@@ -1,7 +1,23 @@
-# Narrative RPG Engine — tactical core v3.4 QA
+# Narrative RPG Engine — tactical core v3.5 QA
 
 This repository is a **strict, conservative Python rules helper** for a ChatGPT-run, Airtable-backed narrative RPG campaign. It is **not** a complete D&D 5e implementation, autonomous GM, VTT, or always-on server. Game state is persisted in Airtable, not in model text or in this repository. No personal campaign notes, API credentials, or real character inventories belong in this public codebase.
 
+
+## v3.5 QA — action-restricted gateway prototype
+
+`gateway_service.py` offers an authenticated, narrow HTTP interface to the
+v3.4 replay-and-commit gateway. GPT Actions may read verified tactical state
+or submit **one** supported operation (move, Disengage, end turn, limited
+adjacent melee). Fake/client-supplied rolls, arbitrary Airtable writes and
+compound operations are rejected. Melee attack dice are generated
+server-side with Python OS entropy and committed with the event.
+
+This service is **not deployed by this repository**, so publishing the source
+**does not enforce** writing restrictions. Real enforcement also requires
+a dedicated Airtable writer credential, authenticated hosted service,
+Action-only custom GPT, and restricted competing write access. The first
+prototype is **QA only**, without atomic multi-table transactions or complete
+5e legality. See `DEPLOY_GATEWAY.md` before configuring a host.
 
 ## v3.4 strict turn-write gateway
 
@@ -42,7 +58,7 @@ records were not modified by this release.
 python -m unittest discover -s . -p 'test_*.py' -v
 ```
 
-The QA release was tested locally with **242 passing unittest cases**, including **100 synthetic multi-round encounters** with independent exact replay. GitHub Actions is configured to test Python 3.11, 3.12 and 3.13 **after this update is published**; only Python 3.13 was run locally.
+The QA release was tested locally with **255 passing unittest cases**, including **100 synthetic multi-round encounters** with independent exact replay. GitHub Actions runs Python 3.11, 3.12 and 3.13 on every push. The v3.5 package is locally tested; publishing these changes will trigger the remote matrix.
 
 ## Verify a complete ChatGPT Airtable connector export (read-only)
 

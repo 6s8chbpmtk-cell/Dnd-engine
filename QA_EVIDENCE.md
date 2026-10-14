@@ -1,3 +1,22 @@
+# v3.5 local QA gateway evidence — October 13, 2026
+
+- **255/255** full unittest discoveries passed on local Python 3.13 after adding
+  `gateway_service.py` and thirteen new FakePort-only gateway tests.
+- New coverage: Bearer API authentication; read-only exact tactical recovery;
+  canonical structured one-operation write; deterministic post-write history
+  verification; server-side OS attack/damage dice; no client-provided dice;
+  no compound operations; no implicit player action; stale expected version;
+  out-of-reach attack refuses to roll; bad-history rejection before writes.
+- Prior **v3.4 GitHub Actions** had success on Python 3.11, 3.12 and 3.13.
+  v3.5 GitHub matrix is pending upload.
+- **No live service deployed** and **no real Airtable test write** occurred
+  during v3.5 development. Running local tests does not verify live token
+  scoping, Airtable network access, Render hosting or a GPT Action.
+- See `DEPLOY_GATEWAY.md` for enforced write-token separation, limitations
+  and the isolated deployment test plan.
+
+---
+
 # v3.4 local QA evidence — October 13, 2026
 
 ## Automated tests
